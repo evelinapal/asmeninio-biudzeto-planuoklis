@@ -1,6 +1,6 @@
 import { expenseSize, formatEuros } from '../money'
 
-export default function ExpenseList({ expenses, onAdd }) {
+export default function ExpenseList({ expenses, onAdd, loaded = true }) {
   const ordered = [...expenses].sort(
     (a, b) => b.createdAt - a.createdAt || b.id.localeCompare(a.id),
   )
@@ -14,7 +14,7 @@ export default function ExpenseList({ expenses, onAdd }) {
         </button>
       </div>
 
-      {ordered.length === 0 ? (
+      {ordered.length === 0 && loaded ? (
         <p className="empty-list">Šį mėnesį išlaidų dar nėra.</p>
       ) : (
         <ul className="expense-list">

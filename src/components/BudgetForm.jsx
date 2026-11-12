@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { parseEurosToCents } from '../money'
 
-export default function BudgetForm({ onSave, onCancel }) {
+export default function BudgetForm({ onSave, onCancel, saving = false }) {
   const [amount, setAmount] = useState('')
   const [error, setError] = useState('')
 
@@ -31,10 +31,10 @@ export default function BudgetForm({ onSave, onCancel }) {
       />
       {error ? <p className="form-error">{error}</p> : null}
       <div className="form-actions">
-        <button type="submit" className="btn btn-primary">
-          Išsaugoti
+        <button type="submit" className="btn btn-primary" disabled={saving}>
+          {saving ? 'Saugoma…' : 'Išsaugoti'}
         </button>
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+        <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={saving}>
           Atšaukti
         </button>
       </div>
