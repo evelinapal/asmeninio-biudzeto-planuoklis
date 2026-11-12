@@ -64,7 +64,7 @@ export default function ExpenseForm({ onSave, onCancel, saving = false }) {
       {error ? <p className="form-error">{error}</p> : null}
       <div className="form-actions">
         <button type="submit" className="btn btn-primary" disabled={saving || submitting}>
-          Išsaugoti
+          {saving || submitting ? 'Saugoma…' : 'Išsaugoti'}
         </button>
         <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={saving || submitting}>
           Atšaukti

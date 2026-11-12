@@ -23,6 +23,11 @@ export default function App() {
   const [budgetOpen, setBudgetOpen] = useState(false)
   const [expenseOpen, setExpenseOpen] = useState(false)
   const [budgetLoading, setBudgetLoading] = useState(false)
+  const [expensesLoading, setExpensesLoading] = useState(false)
+  const [budgetSaving, setBudgetSaving] = useState(false)
+  const [expenseSaving, setExpenseSaving] = useState(false)
+  const [retryCount, setRetryCount] = useState(0)
+  const [canRetryRead, setCanRetryRead] = useState(false)
   const requestVersion = useRef(0)
   const saveInProgress = useRef(false)
 
@@ -39,6 +44,10 @@ export default function App() {
         currentUserId = nextUserId
         setMonths({})
         setBudgetLoading(false)
+        setExpensesLoading(false)
+        setBudgetSaving(false)
+        setExpenseSaving(false)
+        setCanRetryRead(false)
         setSelected({ year: 2026, month: 11 })
         setNotice(null)
         setBudgetOpen(false)
@@ -63,6 +72,10 @@ export default function App() {
         currentUserId = initialUserId
         setMonths({})
         setBudgetLoading(false)
+        setExpensesLoading(false)
+        setBudgetSaving(false)
+        setExpenseSaving(false)
+        setCanRetryRead(false)
         setSelected({ year: 2026, month: 11 })
         setNotice(null)
         setBudgetOpen(false)
@@ -92,6 +105,8 @@ export default function App() {
     const version = ++requestVersion.current
     let active = true
     setBudgetLoading(true)
+    setExpensesLoading(false)
+    setCanRetryRead(false)
 
     supabase
       .from('budgets')
@@ -102,6 +117,8 @@ export default function App() {
       .then(async ({ data, error }) => {
         if (!active || version !== requestVersion.current) return
         if (error) {
+          console.error('Budget read failed:', error)
+          setCanRetryRead(true)
           setNotice({ type: 'error', text: 'Biudžeto nuskaityti nepavyko. Bandykite dar kartą.' })
           return
         }
@@ -109,9 +126,13 @@ export default function App() {
         if (data) {
           const budgetCents = Math.round(Number(data.amount) * 100)
           if (!Number.isFinite(budgetCents)) {
+            console.error('Invalid budget amount:', data.amount)
+            setCanRetryRead(true)
             setNotice({ type: 'error', text: 'Išsaugoto biudžeto suma netinkama.' })
             return
           }
+          setBudgetLoading(false)
+          setExpensesLoading(true)
           const { data: expenseRows, error: expensesError } = await supabase
             .from('expenses')
             .select('id, title, amount, category, created_at')
@@ -121,6 +142,8 @@ export default function App() {
 
           if (!active || version !== requestVersion.current) return
           if (expensesError) {
+            console.error('Expense read failed:', expensesError)
+            setCanRetryRead(true)
             setNotice({ type: 'error', text: 'Išlaidų nuskaityti nepavyko. Bandykite dar kartą.' })
             return
           }
@@ -134,26 +157,38 @@ export default function App() {
           }))
           setMonths((current) => ({
             ...current,
-            [monthQueryKey]: { ...current[monthQueryKey], budgetId: data.id, budgetCents, expenses },
+            [monthQueryKey]: { ...current[monthQueryKey], budgetId: data.id, budgetCents, expenses, expensesLoaded: true },
           }))
         }
       })
-      .catch(() => {
+      .catch((error) => {
         if (active && version === requestVersion.current) {
+          console.error('Monthly data read failed:', error)
+          setCanRetryRead(true)
           setNotice({ type: 'error', text: 'Biudžeto nuskaityti nepavyko. Bandykite dar kartą.' })
         }
       })
       .finally(() => {
-        if (active && version === requestVersion.current) setBudgetLoading(false)
+        if (active && version === requestVersion.current) {
+          setBudgetLoading(false)
+          setExpensesLoading(false)
+        }
       })
 
     return () => {
       active = false
     }
-  }, [userId, sessionLoading, monthQueryKey])
+  }, [userId, sessionLoading, monthQueryKey, retryCount])
+
+  function retryMonthlyRead() {
+    setNotice(null)
+    setCanRetryRead(false)
+    setRetryCount((count) => count + 1)
+  }
 
   async function signOut() {
     const { error } = await supabase.auth.signOut()
+    if (error) console.error('Sign out failed:', error)
     if (error) setNotice({ type: 'error', text: 'Nepavyko atsijungti. Bandykite dar kartą.' })
   }
 
@@ -187,9 +222,10 @@ export default function App() {
   }
 
   async function saveBudget(amountCents) {
-    if (!userId || saveInProgress.current || months[key]) return
+    if (!userId || saveInProgress.current || budgetSaving || months[key]) return
     saveInProgress.current = true
-    setBudgetLoading(true)
+    setBudgetSaving(true)
+    setCanRetryRead(false)
     setNotice(null)
     const version = requestVersion.current
     const saveUserId = userId
@@ -201,18 +237,21 @@ export default function App() {
         .select('id, amount')
         .single()
       if (error) {
+        console.error('Budget save failed:', error)
         if (version === requestVersion.current) setNotice({ type: 'error', text: error.code === '23505' ? 'Šio mėnesio biudžetas jau sukurtas.' : 'Biudžeto išsaugoti nepavyko. Bandykite dar kartą.' })
         return
       }
       if (version !== requestVersion.current || saveUserId !== session?.user?.id || saveMonthKey !== monthKey(selected.year, selected.month)) return
-      setMonths((current) => current[saveMonthKey] ? current : { ...current, [saveMonthKey]: { budgetId: data.id, budgetCents: Math.round(Number(data.amount) * 100), expenses: [] } })
+      setMonths((current) => current[saveMonthKey] ? current : { ...current, [saveMonthKey]: { budgetId: data.id, budgetCents: Math.round(Number(data.amount) * 100), expenses: [], expensesLoaded: false } })
       setBudgetOpen(false)
-      setNotice({ type: 'success', text: 'Biudžetas išsaugotas.' })
-    } catch {
+      setRetryCount((count) => count + 1)
+      setNotice({ type: 'success', text: 'Biudžetas sėkmingai išsaugotas.' })
+    } catch (error) {
+      console.error('Save request failed:', error)
       if (version === requestVersion.current) setNotice({ type: 'error', text: 'Biudžeto išsaugoti nepavyko. Bandykite dar kartą.' })
     } finally {
       saveInProgress.current = false
-      if (version === requestVersion.current) setBudgetLoading(false)
+      if (version === requestVersion.current) setBudgetSaving(false)
     }
   }
 
@@ -226,7 +265,8 @@ export default function App() {
     const version = requestVersion.current
     const saveUserId = userId
     const saveMonthKey = key
-    setBudgetLoading(true)
+    setExpenseSaving(true)
+    setCanRetryRead(false)
     setNotice(null)
     try {
       let budgetId = monthBudget.budgetId
@@ -260,7 +300,10 @@ export default function App() {
         .select('id, title, amount, category, created_at')
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Expense save failed:', error)
+        throw error
+      }
       if (version !== requestVersion.current || saveUserId !== session?.user?.id || saveMonthKey !== monthKey(selected.year, selected.month)) return false
 
       const expense = {
@@ -276,13 +319,14 @@ export default function App() {
         return { ...current, [saveMonthKey]: { ...existing, expenses: [...existing.expenses, expense] } }
       })
       setExpenseOpen(false)
-      setNotice({ type: 'success', text: 'Išlaida pridėta.' })
+      setNotice({ type: 'success', text: 'Išlaida sėkmingai išsaugota.' })
       return true
-    } catch {
+    } catch (error) {
+      console.error('Save request failed:', error)
       if (version === requestVersion.current) setNotice({ type: 'error', text: 'Išlaidos išsaugoti nepavyko. Bandykite dar kartą.' })
       return false
     } finally {
-      if (version === requestVersion.current) setBudgetLoading(false)
+      if (version === requestVersion.current) setExpenseSaving(false)
     }
   }
 
@@ -304,10 +348,12 @@ export default function App() {
       </header>
 
       <main>
-        <Notice notice={notice} />
+        <Notice notice={notice} onRetry={canRetryRead ? retryMonthlyRead : undefined} />
 
         {budgetLoading ? (
           <p role="status">Įkeliamas mėnesio biudžetas…</p>
+        ) : expensesLoading ? (
+          <p role="status">Įkeliamos išlaidos…</p>
         ) : hasBudget ? (
           <>
             <BudgetOverview
@@ -316,6 +362,7 @@ export default function App() {
             />
             <ExpenseList
               expenses={monthData.expenses}
+              loaded={monthData.expensesLoaded}
               onAdd={() => {
                 setNotice(null)
                 setExpenseOpen(true)
@@ -334,13 +381,13 @@ export default function App() {
 
       {budgetOpen && !budgetLoading ? (
         <Modal title="Naujas biudžetas" onClose={() => setBudgetOpen(false)}>
-          <BudgetForm onSave={saveBudget} onCancel={() => setBudgetOpen(false)} />
+          <BudgetForm onSave={saveBudget} onCancel={() => setBudgetOpen(false)} saving={budgetSaving} />
         </Modal>
       ) : null}
 
       {expenseOpen && hasBudget ? (
         <Modal title="Nauja išlaida" onClose={() => setExpenseOpen(false)}>
-          <ExpenseForm onSave={saveExpense} onCancel={() => setExpenseOpen(false)} saving={budgetLoading} />
+          <ExpenseForm onSave={saveExpense} onCancel={() => setExpenseOpen(false)} saving={expenseSaving} />
         </Modal>
       ) : null}
     </div>

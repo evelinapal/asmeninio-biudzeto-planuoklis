@@ -36,8 +36,9 @@ export default function AuthForm() {
           : 'Prisijungėte sėkmingai.',
       )
     } catch (error) {
+      console.error('Authentication request failed:', error)
       setMessageType('error')
-      setMessage(error?.message || 'Nepavyko prisijungti prie paskyros. Bandykite dar kartą.')
+      setMessage(isRegister ? 'Registracija nepavyko. Patikrinkite duomenis ir bandykite dar kartą.' : 'Prisijungti nepavyko. Patikrinkite el. paštą ir slaptažodį.')
     } finally {
       setLoading(false)
     }

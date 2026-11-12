@@ -109,6 +109,9 @@ input:focus-visible {
 }
 
 .notice {
+  position: sticky;
+  top: 12px;
+  z-index: 10;
   margin-bottom: 16px;
   padding: 12px 14px;
   border-radius: 12px;
