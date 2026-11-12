@@ -1,12 +1,16 @@
 import { useState } from 'react'
 import { parseEurosToCents } from '../money'
 
-export default function ExpenseForm({ onSave, onCancel }) {
+const CATEGORIES = ['Maistas', 'Transportas', 'Būstas', 'Pramogos', 'Sveikata', 'Kita']
+
+export default function ExpenseForm({ onSave, onCancel, saving = false }) {
   const [name, setName] = useState('')
   const [amount, setAmount] = useState('')
+  const [category, setCategory] = useState(CATEGORIES[0])
   const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
     const trimmed = name.trim()
     if (!trimmed) {
@@ -20,7 +24,12 @@ export default function ExpenseForm({ onSave, onCancel }) {
       return
     }
 
-    onSave({ name: trimmed, amountCents: parsed.cents })
+    setSubmitting(true)
+    try {
+      await onSave({ name: trimmed, amountCents: parsed.cents, category })
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -48,12 +57,16 @@ export default function ExpenseForm({ onSave, onCancel }) {
           setError('')
         }}
       />
+      <label htmlFor="expense-category">Kategorija</label>
+      <select id="expense-category" value={category} onChange={(event) => setCategory(event.target.value)}>
+        {CATEGORIES.map((item) => <option key={item} value={item}>{item}</option>)}
+      </select>
       {error ? <p className="form-error">{error}</p> : null}
       <div className="form-actions">
-        <button type="submit" className="btn btn-primary">
+        <button type="submit" className="btn btn-primary" disabled={saving || submitting}>
           Išsaugoti
         </button>
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+        <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={saving || submitting}>
           Atšaukti
         </button>
       </div>
