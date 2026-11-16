@@ -22,6 +22,7 @@ export default function App() {
   const [notice, setNotice] = useState(null)
   const [budgetOpen, setBudgetOpen] = useState(false)
   const [expenseOpen, setExpenseOpen] = useState(false)
+  const [editingExpense, setEditingExpense] = useState(null)
   const [budgetLoading, setBudgetLoading] = useState(false)
   const [expensesLoading, setExpensesLoading] = useState(false)
   const [budgetSaving, setBudgetSaving] = useState(false)
@@ -52,6 +53,7 @@ export default function App() {
         setNotice(null)
         setBudgetOpen(false)
         setExpenseOpen(false)
+        setEditingExpense(null)
       }
       setSession(nextSession)
       setSessionLoading(false)
@@ -80,6 +82,7 @@ export default function App() {
         setNotice(null)
         setBudgetOpen(false)
         setExpenseOpen(false)
+        setEditingExpense(null)
       }
       setSession(initialSession)
       setSessionLoading(false)
@@ -330,6 +333,54 @@ export default function App() {
     }
   }
 
+  async function updateExpense({ name, amountCents, category }) {
+    const monthBudget = months[key]
+    const expenseId = editingExpense?.id
+    if (!userId || !monthBudget?.budgetId || !expenseId) return false
+
+    const version = requestVersion.current
+    const saveUserId = userId
+    const saveMonthKey = key
+    setExpenseSaving(true)
+    setCanRetryRead(false)
+    setNotice(null)
+    try {
+      const { data, error } = await supabase
+        .from('expenses')
+        .update({ title: name, amount: amountCents / 100, category })
+        .eq('id', expenseId)
+        .eq('user_id', saveUserId)
+        .eq('budget_id', monthBudget.budgetId)
+        .select('id, title, amount, category, created_at')
+        .single()
+      if (error) throw error
+      if (version !== requestVersion.current || saveUserId !== session?.user?.id || saveMonthKey !== monthKey(selected.year, selected.month)) return false
+
+      const updated = {
+        id: data.id,
+        name: data.title,
+        amountCents: Math.round(Number(data.amount) * 100),
+        category: data.category,
+        createdAt: new Date(data.created_at).getTime(),
+      }
+      setMonths((current) => {
+        const existing = current[saveMonthKey]
+        if (!existing || existing.budgetId !== monthBudget.budgetId) return current
+        return { ...current, [saveMonthKey]: { ...existing, expenses: existing.expenses.map((item) => item.id === expenseId ? updated : item) } }
+      })
+      setExpenseOpen(false)
+      setEditingExpense(null)
+      setNotice({ type: 'success', text: 'Išlaida sėkmingai atnaujinta.' })
+      return true
+    } catch (error) {
+      console.error('Expense update failed:', error)
+      if (version === requestVersion.current) setNotice({ type: 'error', text: 'Išlaidos atnaujinti nepavyko. Bandykite dar kartą.' })
+      return false
+    } finally {
+      if (version === requestVersion.current) setExpenseSaving(false)
+    }
+  }
+
   return (
     <div className="app">
       <header className="topbar">
@@ -365,6 +416,12 @@ export default function App() {
               loaded={monthData.expensesLoaded}
               onAdd={() => {
                 setNotice(null)
+                setEditingExpense(null)
+                setExpenseOpen(true)
+              }}
+              onEdit={(expense) => {
+                setNotice(null)
+                setEditingExpense(expense)
                 setExpenseOpen(true)
               }}
             />
@@ -386,8 +443,14 @@ export default function App() {
       ) : null}
 
       {expenseOpen && hasBudget ? (
-        <Modal title="Nauja išlaida" onClose={() => setExpenseOpen(false)}>
-          <ExpenseForm onSave={saveExpense} onCancel={() => setExpenseOpen(false)} saving={expenseSaving} />
+        <Modal title={editingExpense ? 'Redaguoti išlaidą' : 'Nauja išlaida'} onClose={() => { setExpenseOpen(false); setEditingExpense(null) }}>
+          <ExpenseForm
+            key={editingExpense?.id ?? 'new-expense'}
+            initialExpense={editingExpense}
+            onSave={editingExpense ? updateExpense : saveExpense}
+            onCancel={() => { setExpenseOpen(false); setEditingExpense(null) }}
+            saving={expenseSaving}
+          />
         </Modal>
       ) : null}
     </div>

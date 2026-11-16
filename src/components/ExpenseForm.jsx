@@ -3,10 +3,10 @@ import { parseEurosToCents } from '../money'
 
 const CATEGORIES = ['Maistas', 'Transportas', 'Būstas', 'Pramogos', 'Sveikata', 'Kita']
 
-export default function ExpenseForm({ onSave, onCancel, saving = false }) {
-  const [name, setName] = useState('')
-  const [amount, setAmount] = useState('')
-  const [category, setCategory] = useState(CATEGORIES[0])
+export default function ExpenseForm({ onSave, onCancel, saving = false, initialExpense }) {
+  const [name, setName] = useState(initialExpense?.name ?? '')
+  const [amount, setAmount] = useState(initialExpense ? (initialExpense.amountCents / 100).toFixed(2).replace('.', ',') : '')
+  const [category, setCategory] = useState(initialExpense?.category ?? CATEGORIES[0])
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 

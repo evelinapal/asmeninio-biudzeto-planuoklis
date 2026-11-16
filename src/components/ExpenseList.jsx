@@ -1,6 +1,6 @@
 import { expenseSize, formatEuros } from '../money'
 
-export default function ExpenseList({ expenses, onAdd, loaded = true }) {
+export default function ExpenseList({ expenses, onAdd, onEdit, loaded = true }) {
   const ordered = [...expenses].sort(
     (a, b) => b.createdAt - a.createdAt || b.id.localeCompare(a.id),
   )
@@ -28,7 +28,12 @@ export default function ExpenseList({ expenses, onAdd, loaded = true }) {
                     {size}
                   </span>
                 </div>
-                <p className="expense-amount">{formatEuros(expense.amountCents)}</p>
+                <div className="expense-actions">
+                  <p className="expense-amount">{formatEuros(expense.amountCents)}</p>
+                  <button type="button" className="btn btn-ghost" onClick={() => onEdit(expense)}>
+                    Redaguoti
+                  </button>
+                </div>
               </li>
             )
           })}
