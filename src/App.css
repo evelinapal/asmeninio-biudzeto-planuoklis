@@ -330,10 +330,128 @@ input:focus-visible {
   padding: 12px 14px;
 }
 
+.entry-form input,
+.entry-form select {
+  width: 100%;
+  min-height: 46px;
+  color: var(--text);
+  background: var(--secondary);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 11px 14px;
+}
+
+.entry-form select {
+  color-scheme: dark;
+}
+
+.entry-form input:focus-visible,
+.entry-form select:focus-visible {
+  outline: 2px solid var(--emerald);
+  outline-offset: 2px;
+}
+
 .form-actions {
   display: flex;
   gap: 10px;
   margin-top: 12px;
+}
+
+.expense-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.badge-category {
+  color: color-mix(in srgb, var(--category-color) 88%, white);
+  background: color-mix(in srgb, var(--category-color) 14%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--category-color) 42%, transparent);
+  white-space: nowrap;
+}
+
+.expense-amount {
+  color: var(--text);
+}
+
+.expense-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.category-summary {
+  margin-top: 20px;
+  padding: 18px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+.category-summary .section-head {
+  margin-bottom: 16px;
+}
+
+.category-summary .muted {
+  margin-top: 4px;
+  font-size: 14px;
+}
+
+.category-summary-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.category-summary-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.category-summary-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.category-summary-dot {
+  flex: 0 0 10px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--category-color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--category-color) 18%, transparent);
+}
+
+.category-summary-amount {
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+
+.category-progress-track {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--secondary);
+}
+
+.category-progress-fill {
+  display: block;
+  height: 100%;
+  min-width: 0;
+  border-radius: inherit;
+  background: var(--category-color);
+  transition: width 0.2s ease;
 }
 
 @media (max-width: 760px) {
@@ -364,5 +482,15 @@ input:focus-visible {
 
   .expense-item {
     align-items: flex-start;
+  }
+
+  .category-summary-list {
+    grid-template-columns: 1fr;
+  }
+
+  .expense-actions {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
   }
 }

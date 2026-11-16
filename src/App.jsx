@@ -5,6 +5,7 @@ import './App.css'
 import AuthForm from './components/AuthForm'
 import BudgetForm from './components/BudgetForm'
 import BudgetOverview from './components/BudgetOverview'
+import CategorySummary from './components/CategorySummary'
 import EmptyBudget from './components/EmptyBudget'
 import ExpenseForm from './components/ExpenseForm'
 import ExpenseList from './components/ExpenseList'
@@ -411,6 +412,7 @@ export default function App() {
               budgetCents={monthData.budgetCents}
               spentCents={sumCents(monthData.expenses)}
             />
+            <CategorySummary expenses={monthData.expenses} />
             <ExpenseList
               expenses={monthData.expenses}
               loaded={monthData.expensesLoaded}

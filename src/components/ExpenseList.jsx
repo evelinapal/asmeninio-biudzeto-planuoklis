@@ -1,4 +1,5 @@
 import { expenseSize, formatEuros } from '../money'
+import { CATEGORIES, CATEGORY_COLORS } from '../categories'
 
 export default function ExpenseList({ expenses, onAdd, onEdit, loaded = true }) {
   const ordered = [...expenses].sort(
@@ -24,9 +25,17 @@ export default function ExpenseList({ expenses, onAdd, onEdit, loaded = true }) 
               <li key={expense.id} className="expense-item">
                 <div>
                   <p className="expense-name">{expense.name}</p>
-                  <span className={size === 'Didelė' ? 'badge badge-large' : 'badge badge-small'}>
-                    {size}
-                  </span>
+                  <div className="expense-badges">
+                    <span
+                      className="badge badge-category"
+                      style={{ '--category-color': CATEGORY_COLORS[CATEGORIES.includes(expense.category) ? expense.category : 'Kita'] }}
+                    >
+                      {CATEGORIES.includes(expense.category) ? expense.category : 'Kita'}
+                    </span>
+                    <span className={size === 'Didelė' ? 'badge badge-large' : 'badge badge-small'}>
+                      {size}
+                    </span>
+                  </div>
                 </div>
                 <div className="expense-actions">
                   <p className="expense-amount">{formatEuros(expense.amountCents)}</p>
