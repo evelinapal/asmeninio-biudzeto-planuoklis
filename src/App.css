@@ -221,6 +221,80 @@ input:focus-visible {
   font-size: 14px;
 }
 
+.expense-history {
+  margin-top: 24px;
+  padding: 18px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+.expense-history-heading {
+  margin-bottom: 16px;
+}
+
+.expense-history-heading .muted {
+  margin-top: 4px;
+  font-size: 14px;
+}
+
+.expense-history-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.expense-history-row {
+  display: grid;
+  grid-template-columns: minmax(88px, 128px) minmax(40px, 1fr) minmax(82px, auto);
+  align-items: center;
+  gap: 12px;
+}
+
+.expense-history-month {
+  color: var(--muted);
+  font-size: 14px;
+  text-transform: capitalize;
+}
+
+.expense-history-track {
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--secondary);
+}
+
+.expense-history-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--emerald), var(--violet));
+  transition: width 0.2s ease;
+}
+
+.expense-history-amount {
+  color: var(--text);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.expense-history-message {
+  color: var(--muted);
+}
+
+.expense-history-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  color: var(--danger);
+}
+
 .expenses {
   margin-top: 28px;
 }
@@ -492,5 +566,19 @@ input:focus-visible {
     flex-direction: column;
     align-items: flex-end;
     gap: 8px;
+  }
+
+  .expense-history {
+    padding: 16px 12px;
+  }
+
+  .expense-history-row {
+    grid-template-columns: minmax(72px, 88px) minmax(24px, 1fr) minmax(72px, auto);
+    gap: 8px;
+  }
+
+  .expense-history-month,
+  .expense-history-amount {
+    font-size: 12px;
   }
 }

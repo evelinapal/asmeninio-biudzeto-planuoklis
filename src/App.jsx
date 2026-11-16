@@ -8,6 +8,7 @@ import BudgetOverview from './components/BudgetOverview'
 import CategorySummary from './components/CategorySummary'
 import EmptyBudget from './components/EmptyBudget'
 import ExpenseForm from './components/ExpenseForm'
+import ExpenseHistoryChart from './components/ExpenseHistoryChart'
 import ExpenseList from './components/ExpenseList'
 import Modal from './components/Modal'
 import MonthSwitcher from './components/MonthSwitcher'
@@ -28,6 +29,7 @@ export default function App() {
   const [expensesLoading, setExpensesLoading] = useState(false)
   const [budgetSaving, setBudgetSaving] = useState(false)
   const [expenseSaving, setExpenseSaving] = useState(false)
+  const [expenseHistoryRefresh, setExpenseHistoryRefresh] = useState(0)
   const [retryCount, setRetryCount] = useState(0)
   const [canRetryRead, setCanRetryRead] = useState(false)
   const requestVersion = useRef(0)
@@ -108,6 +110,7 @@ export default function App() {
 
     const version = ++requestVersion.current
     let active = true
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Keep the existing loading indicator in sync with the started request.
     setBudgetLoading(true)
     setExpensesLoading(false)
     setCanRetryRead(false)
@@ -322,6 +325,7 @@ export default function App() {
         if (!existing || existing.budgetId !== budgetId) return current
         return { ...current, [saveMonthKey]: { ...existing, expenses: [...existing.expenses, expense] } }
       })
+      setExpenseHistoryRefresh((current) => current + 1)
       setExpenseOpen(false)
       setNotice({ type: 'success', text: 'Išlaida sėkmingai išsaugota.' })
       return true
@@ -369,6 +373,7 @@ export default function App() {
         if (!existing || existing.budgetId !== monthBudget.budgetId) return current
         return { ...current, [saveMonthKey]: { ...existing, expenses: existing.expenses.map((item) => item.id === expenseId ? updated : item) } }
       })
+      setExpenseHistoryRefresh((current) => current + 1)
       setExpenseOpen(false)
       setEditingExpense(null)
       setNotice({ type: 'success', text: 'Išlaida sėkmingai atnaujinta.' })
@@ -436,6 +441,13 @@ export default function App() {
             }}
           />
         )}
+
+        <ExpenseHistoryChart
+          userId={userId}
+          year={selected.year}
+          month={selected.month}
+          refreshKey={expenseHistoryRefresh}
+        />
       </main>
 
       {budgetOpen && !budgetLoading ? (
