@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { parseEurosToCents } from '../money'
-
-const CATEGORIES = ['Maistas', 'Transportas', 'Būstas', 'Pramogos', 'Sveikata', 'Kita']
+import { CATEGORIES } from '../categories'
 
 export default function ExpenseForm({ onSave, onCancel, saving = false, initialExpense }) {
   const [name, setName] = useState(initialExpense?.name ?? '')
@@ -58,7 +57,7 @@ export default function ExpenseForm({ onSave, onCancel, saving = false, initialE
         }}
       />
       <label htmlFor="expense-category">Kategorija</label>
-      <select id="expense-category" value={category} onChange={(event) => setCategory(event.target.value)}>
+      <select className="form-select" id="expense-category" value={category} onChange={(event) => setCategory(event.target.value)}>
         {CATEGORIES.map((item) => <option key={item} value={item}>{item}</option>)}
       </select>
       {error ? <p className="form-error">{error}</p> : null}
